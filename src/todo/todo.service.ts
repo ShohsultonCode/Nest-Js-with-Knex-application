@@ -1,17 +1,21 @@
-import { Body, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Req } from '@nestjs/common';
 import { Knex } from 'knex';
-import { Todo } from 'src/shared/types/todo.type';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @Injectable()
 export class TodoService {
   constructor(@Inject('KnexConnection') private knex: Knex) {}
-  async create(createTodoDto: CreateTodoDto): Promise<Record<string, string>> {
+  async create(
+    createTodoDto: CreateTodoDto,
+    req,
+  ): Promise<Record<string, string>> {
     const { title, text } = createTodoDto;
-    await this.knex('todo').insert({
-      todo_title: title,
-      todo_text: text,
+
+    await this.knex('todos').insert({
+      todo_title: title.toLocaleLowerCase(),
+      todo_text: text.toLocaleLowerCase(),
+      user_id: `${req.user.userId}`,
     });
 
     return { message: 'succsess' };
