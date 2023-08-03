@@ -10,35 +10,37 @@ export class AuthService {
   constructor(
     @Inject('KnexConnection') private knex: Knex,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(createAuthDto: registerDto): Promise<Record<string, string>> {
     const { name, username, password } = createAuthDto;
 
-    const hash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.knex
       .select('*')
       .from('users')
-      .where({ user_username: username })
+      .where({ user_username: username.toLowerCase().trim() })
       .first();
 
     if (user) {
-      throw new BadRequestException('Invalid username or password');
+      throw new BadRequestException('Username already exists');
     }
 
-    const userId = user;
-    const payload = { userId, username };
+    const newUser = await this.knex('users')
+      .insert({
+        user_name: name.toLowerCase().trim(),
+        user_username: username.toLowerCase().trim(),
+        user_password: hashedPassword,
+      })
+      .returning('*');
 
-    const token = await this.jwtService.sign(payload);
+    const userId = newUser[0].user_id;
+    const payload = { userId };
 
-    await this.knex('users').insert({
-      user_name: name,
-      user_username: username,
-      user_password: hash,
-    });
+    const token = this.jwtService.sign(payload);
 
-    return { message: 'Succsessfuly Register', token: token };
+    return { message: 'Successfully registered', token };
   }
 
   async login(createAuthDto: loginDto): Promise<Record<string, string>> {
@@ -47,7 +49,7 @@ export class AuthService {
     const user = await this.knex
       .select('*')
       .from('users')
-      .where({ user_username: username })
+      .where({ user_username: username.toLowerCase().trim() })
       .first();
 
     if (!user) {

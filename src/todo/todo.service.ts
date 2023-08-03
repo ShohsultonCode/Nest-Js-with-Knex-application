@@ -5,17 +5,17 @@ import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @Injectable()
 export class TodoService {
-  constructor(@Inject('KnexConnection') private knex: Knex) {}
+  constructor(@Inject('KnexConnection') private knex: Knex) { }
   async create(
     createTodoDto: CreateTodoDto,
     req,
   ): Promise<Record<string, string>> {
     const { title, text } = createTodoDto;
 
-    await this.knex('todos').insert({
-      todo_title: title.toLocaleLowerCase(),
-      todo_text: text.toLocaleLowerCase(),
-      user_id: `${req.user.userId}`,
+    await this.knex('posts').insert({
+      post_title: title.toLocaleLowerCase(),
+      post_text: text.toLocaleLowerCase(),
+      post_user_id: `${req.user.userId}`,
     });
 
     return { message: 'succsess' };
